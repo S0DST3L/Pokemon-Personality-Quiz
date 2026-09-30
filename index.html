@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon Personality Quiz</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel to compile JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .pixelated {
+      image-rendering: pixelated;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    .float-slow {
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const ASSETS = {
+      background: 'https://i.pinimg.com/736x/a1/78/49/a1784992a1330eacd83cc0c868bf8e11.jpg',
+      sprites: [
+        'https://64.media.tumblr.com/27f13a9887f36dd5b3179ad443caaeaa/09fa295d8bc7956b-eb/s250x400/8fb2db4b4f258796938339c8d012e2e45f76c3b9.pnj',
+        'https://64.media.tumblr.com/74e9e96cb5b8aab83bce6f9e5f1223c2/09fa295d8bc7956b-1e/s250x400/1cdccb1e40b05a3d2561507578550d96296a7634.pnj',
+        'https://64.media.tumblr.com/bc46d06fb3b83eac0d3f0ebd5d89e82f/09fa295d8bc7956b-76/s250x400/dfd20bc9572bc7fa1736fccf4777d1dbfda48dbc.pnj',
+        'https://64.media.tumblr.com/0ad8096d00aba5982a17070e1499d16d/09fa295d8bc7956b-de/s250x400/83586fe0b743ee42b021a107b1e5fdc379a2efa1.pnj'
+      ]
+    };
+
+    const POKEMON_DB = [
+      { id: 1, name: 'Bulbasaur', types: ['Grass', 'Poison'], habitat: 'Nature', style: 'Tactical', vibe: 'Loyal', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png' },
+      { id: 6, name: 'Charizard', types: ['Fire', 'Flying'], habitat: 'Mountain', style: 'Aggressive', vibe: 'Proud', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png' },
+      { id: 9, name: 'Blastoise', types: ['Water'], habitat: 'Water', style: 'Defensive', vibe: 'Stoic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png' },
+      { id: 25, name: 'Pikachu', types: ['Electric'], habitat: 'Urban', style: 'Speedy', vibe: 'Energetic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png' },
+      { id: 94, name: 'Gengar', types: ['Ghost', 'Poison'], habitat: 'Urban', style: 'Tricky', vibe: 'Mischievous', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png' },
+      { id: 133, name: 'Eevee', types: ['Normal'], habitat: 'Urban', style: 'Adaptable', vibe: 'Friendly', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png' },
+      { id: 143, name: 'Snorlax', types: ['Normal'], habitat: 'Nature', style: 'Defensive', vibe: 'Chill', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png' },
+      { id: 448, name: 'Lucario', types: ['Fighting', 'Steel'], habitat: 'Mountain', style: 'Tactical', vibe: 'Stoic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png' },
+      { id: 658, name: 'Greninja', types: ['Water', 'Dark'], habitat: 'Water', style: 'Speedy', vibe: 'Mischievous', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/658.png' },
+      { id: 700, name: 'Sylveon', types: ['Fairy'], habitat: 'Urban', style: 'Defensive', vibe: 'Friendly', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/700.png' },
+      { id: 1011, name: 'Dipplin', types: ['Grass', 'Dragon'], habitat: 'Nature', style: 'Tricky', vibe: 'Chill', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1011.png' },
+      { id: 1017, name: 'Ogerpon', types: ['Grass'], habitat: 'Mountain', style: 'Adaptable', vibe: 'Energetic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1017.png' }
+    ];
+
+    const QUESTIONS = [
+      {
+        question: "How do you prefer to spend your ideal weekend?",
+        options: [
+          { text: "Hiking, camping, or just being deep in the woods.", traits: { habitat: ['Nature', 2], types: ['Grass', 1, 'Bug', 1] } },
+          { text: "Staying in bed all day and doing absolutely nothing.", traits: { vibe: ['Chill', 2], style: ['Defensive', 1], types: ['Normal', 1] } },
+          { text: "Exploring the city, hitting cafes, or hanging with friends.", traits: { habitat: ['Urban', 2], vibe: ['Friendly', 1, 'Energetic', 1] } },
+          { text: "Doing extreme sports or something that gets my adrenaline pumping.", traits: { habitat: ['Mountain', 1], vibe: ['Proud', 1], style: ['Speedy', 1, 'Aggressive', 1] } }
+        ]
+      },
+      {
+        question: "You run into a major problem at work/school. How do you handle it?",
+        options: [
+          { text: "Face it head-on with brute force. I will conquer it.", traits: { style: ['Aggressive', 2], types: ['Fighting', 1, 'Fire', 1], vibe: ['Proud', 1] } },
+          { text: "Analyze the situation, make a plan, and execute it flawlessly.", traits: { style: ['Tactical', 2], types: ['Psychic', 1, 'Steel', 1], vibe: ['Stoic', 1] } },
+          { text: "Find a clever loophole or way around the rules.", traits: { style: ['Tricky', 2], types: ['Dark', 1, 'Ghost', 1], vibe: ['Mischievous', 1] } },
+          { text: "Adapt to the changes on the fly. I'm flexible.", traits: { style: ['Adaptable', 2], types: ['Water', 1, 'Normal', 1] } }
+        ]
+      },
+      {
+        question: "What is your role in your friend group?",
+        options: [
+          { text: "The Protector. I look out for everyone.", traits: { style: ['Defensive', 2], vibe: ['Loyal', 2], types: ['Steel', 1, 'Rock', 1] } },
+          { text: "The Hype Man. Always bringing the energy!", traits: { vibe: ['Energetic', 2], types: ['Electric', 1, 'Fairy', 1] } },
+          { text: "The Joker. I'm here for the memes and pranks.", traits: { vibe: ['Mischievous', 2], types: ['Poison', 1, 'Ghost', 1] } },
+          { text: "The quiet, observant one who gives good advice.", traits: { vibe: ['Stoic', 2], habitat: ['Water', 1], types: ['Psychic', 1] } }
+        ]
+      },
+      {
+        question: "Pick an elemental vibe that calls to you:",
+        options: [
+          { text: "Roaring flames and blazing heat.", traits: { types: ['Fire', 3], habitat: ['Mountain', 1] } },
+          { text: "Crashing waves and deep blue oceans.", traits: { types: ['Water', 3], habitat: ['Water', 1] } },
+          { text: "Overgrown forests and blooming flowers.", traits: { types: ['Grass', 3], habitat: ['Nature', 1] } },
+          { text: "Mysticism, shadows, and the supernatural.", traits: { types: ['Dark', 2, 'Ghost', 2], style: ['Tricky', 1] } }
+        ]
+      },
+      {
+        question: "What does your morning routine look like?",
+        options: [
+          { text: "Up before the sun, instantly ready to go!", traits: { vibe: ['Energetic', 2], types: ['Flying', 1, 'Electric', 1] } },
+          { text: "Hit snooze five times. I need coffee. Lots of it.", traits: { vibe: ['Chill', 2], types: ['Normal', 1] } },
+          { text: "A structured routine. Stretch, breakfast, get to work.", traits: { style: ['Tactical', 1], vibe: ['Stoic', 1], types: ['Steel', 1] } },
+          { text: "It's chaotic and different every single day.", traits: { style: ['Adaptable', 2], vibe: ['Mischievous', 1], types: ['Bug', 1] } }
+        ]
+      },
+      {
+        question: "Which type of weather do you secretly (or openly) love most?",
+        options: [
+          { text: "Heavy rain and thunderstorms.", traits: { types: ['Water', 2, 'Electric', 1], vibe: ['Chill', 1] } },
+          { text: "Blistering, sunny summer days.", traits: { types: ['Fire', 2, 'Grass', 1], vibe: ['Energetic', 1] } },
+          { text: "Freezing cold and snowy blizzards.", traits: { types: ['Ice', 3], habitat: ['Mountain', 1], vibe: ['Stoic', 1] } },
+          { text: "Windy, overcast, moody autumn days.", traits: { types: ['Ghost', 1, 'Flying', 1], vibe: ['Mischievous', 1] } }
+        ]
+      },
+      {
+        question: "You find a wallet on the ground with $100 in it. What do you do?",
+        options: [
+          { text: "Turn it in to the authorities immediately. It's the right thing.", traits: { vibe: ['Loyal', 2], types: ['Fighting', 1] } },
+          { text: "Keep the cash, toss the wallet. Finders keepers!", traits: { vibe: ['Mischievous', 2], types: ['Dark', 2] } },
+          { text: "Track down the owner myself and return it personally.", traits: { vibe: ['Friendly', 2], style: ['Speedy', 1] } },
+          { text: "Leave it alone. Not my problem.", traits: { vibe: ['Stoic', 2, 'Chill', 1] } }
+        ]
+      },
+      {
+        question: "What's your favorite type of video game?",
+        options: [
+          { text: "Deep strategy, RPGs, or puzzle games.", traits: { style: ['Tactical', 2], types: ['Psychic', 2] } },
+          { text: "Fast-paced shooters or action-packed brawlers.", traits: { style: ['Aggressive', 1, 'Speedy', 1], types: ['Fighting', 1, 'Fire', 1] } },
+          { text: "Cozy farming sims or sandbox games.", traits: { vibe: ['Chill', 2], habitat: ['Nature', 1], types: ['Grass', 1] } },
+          { text: "Multiplayer party games to troll my friends.", traits: { vibe: ['Mischievous', 2], style: ['Tricky', 1], types: ['Poison', 1] } }
+        ]
+      },
+      {
+        question: "How do you handle conflict or an argument?",
+        options: [
+          { text: "I get defensive and protect my feelings/friends at all costs.", traits: { style: ['Defensive', 2], types: ['Rock', 1, 'Steel', 1] } },
+          { text: "I argue passionately and aggressively. I want to win.", traits: { style: ['Aggressive', 2], types: ['Dragon', 1, 'Fire', 1] } },
+          { text: "I stay completely emotionless and state the facts.", traits: { vibe: ['Stoic', 2], types: ['Ice', 1, 'Psychic', 1] } },
+          { text: "I try to defuse it with a joke or change the subject.", traits: { style: ['Adaptable', 1], vibe: ['Friendly', 1], types: ['Fairy', 1] } }
+        ]
+      },
+      {
+        question: "If you had a hidden superpower, what would it be?",
+        options: [
+          { text: "Super speed or teleportation.", traits: { style: ['Speedy', 2], types: ['Flying', 1, 'Electric', 1] } },
+          { text: "Invincibility or super strength.", traits: { style: ['Defensive', 1, 'Aggressive', 1], types: ['Rock', 1, 'Fighting', 1] } },
+          { text: "Mind reading or telekinesis.", traits: { style: ['Tactical', 1], types: ['Psychic', 2] } },
+          { text: "Invisibility or shapeshifting.", traits: { style: ['Tricky', 2], types: ['Ghost', 1, 'Dark', 1] } }
+        ]
+      },
+      {
+        question: "Where is your ideal vacation spot?",
+        options: [
+          { text: "A secluded cabin in the snowy mountains.", traits: { habitat: ['Mountain', 2], types: ['Ice', 1], vibe: ['Stoic', 1] } },
+          { text: "A tropical beach resort with clear water.", traits: { habitat: ['Water', 2], types: ['Water', 1], vibe: ['Chill', 1] } },
+          { text: "A bustling metropolis like Tokyo or New York.", traits: { habitat: ['Urban', 2], types: ['Electric', 1, 'Steel', 1] } },
+          { text: "A remote jungle or ancient ruins.", traits: { habitat: ['Nature', 2], types: ['Bug', 1, 'Ground', 1] } }
+        ]
+      },
+      {
+        question: "You are given a magical artifact. Which do you choose?",
+        options: [
+          { text: "A flaming sword that cuts through anything.", traits: { types: ['Fire', 2, 'Steel', 1], style: ['Aggressive', 1] } },
+          { text: "A glowing crystal ball that shows the future.", traits: { types: ['Psychic', 2, 'Fairy', 1], style: ['Tactical', 1] } },
+          { text: "A cloak made of shadows that hides you completely.", traits: { types: ['Dark', 2, 'Ghost', 1], style: ['Tricky', 1] } },
+          { text: "A heavy shield that can withstand any impact.", traits: { types: ['Rock', 2, 'Steel', 1], style: ['Defensive', 1] } }
+        ]
+      },
+      {
+        question: "What are your sleep habits like?",
+        options: [
+          { text: "I sleep 10+ hours if nobody wakes me up.", traits: { vibe: ['Chill', 2], types: ['Normal', 2] } },
+          { text: "I function perfectly on 4 hours of sleep. I'm always buzzing.", traits: { vibe: ['Energetic', 2], types: ['Electric', 1, 'Bug', 1] } },
+          { text: "I'm a massive night owl. I come alive at 2 AM.", traits: { types: ['Dark', 2, 'Ghost', 1], vibe: ['Mischievous', 1] } },
+          { text: "I have a strict 8-hour schedule. In bed by 10 PM.", traits: { vibe: ['Stoic', 1], style: ['Tactical', 1] } }
+        ]
+      },
+      {
+        question: "How do you approach a group project?",
+        options: [
+          { text: "I take charge, organize everyone, and act as the leader.", traits: { style: ['Tactical', 2], vibe: ['Proud', 1], types: ['Psychic', 1] } },
+          { text: "I end up doing all the hard work myself to make sure it's right.", traits: { style: ['Aggressive', 1, 'Defensive', 1], vibe: ['Loyal', 1] } },
+          { text: "I keep the vibes good and make sure everyone is having fun.", traits: { vibe: ['Friendly', 2], types: ['Fairy', 1, 'Water', 1] } },
+          { text: "I do the absolute bare minimum and hope nobody notices.", traits: { vibe: ['Mischievous', 1, 'Chill', 1], types: ['Poison', 1] } }
+        ]
+      },
+      {
+        question: "How do you express affection to people you care about?",
+        options: [
+          { text: "Physical touch. Lots of hugs and closeness.", traits: { vibe: ['Friendly', 2], types: ['Fairy', 2] } },
+          { text: "Acts of service. I will fight for them or fix their problems.", traits: { vibe: ['Loyal', 2], types: ['Fighting', 1, 'Dragon', 1] } },
+          { text: "Quality time. Just sitting together in silence is enough.", traits: { vibe: ['Stoic', 1, 'Chill', 1], types: ['Ice', 1, 'Ground', 1] } },
+          { text: "Teasing them relentlessly. If I roast you, I love you.", traits: { vibe: ['Mischievous', 2], types: ['Dark', 1, 'Fire', 1] } }
+        ]
+      },
+      {
+        question: "Pick a color palette that soothes your soul:",
+        options: [
+          { text: "Crimson reds, bright oranges, and vibrant yellows.", traits: { types: ['Fire', 2, 'Dragon', 1], vibe: ['Energetic', 1] } },
+          { text: "Deep ocean blues, teals, and seafoam greens.", traits: { types: ['Water', 2, 'Ice', 1], vibe: ['Chill', 1] } },
+          { text: "Earthy browns, rich greens, and floral pinks.", traits: { types: ['Grass', 2, 'Ground', 1], habitat: ['Nature', 1] } },
+          { text: "Neon purples, stark blacks, and radioactive greens.", traits: { types: ['Poison', 2, 'Dark', 1, 'Ghost', 1] } }
+        ]
+      },
+      {
+        question: "What scares you the most?",
+        options: [
+          { text: "The paranormal, ghosts, and things lurking in the dark.", traits: { types: ['Psychic', 1, 'Normal', 1], vibe: ['Friendly', 1] } },
+          { text: "Failure, losing, or not being good enough.", traits: { vibe: ['Proud', 2], types: ['Fighting', 1, 'Dragon', 1] } },
+          { text: "Creepy crawlies, spiders, and gross bugs.", traits: { types: ['Fairy', 1, 'Fire', 1], style: ['Speedy', 1] } },
+          { text: "Heights, falling, or not having ground beneath me.", traits: { types: ['Ground', 2, 'Rock', 1], style: ['Defensive', 1] } }
+        ]
+      },
+      {
+        question: "You're at a buffet. What's on your plate?",
+        options: [
+          { text: "All the sweet pastries, cakes, and colorful desserts.", traits: { types: ['Fairy', 2, 'Bug', 1], vibe: ['Friendly', 1] } },
+          { text: "Spicy food. The hotter, the better.", traits: { types: ['Fire', 2], vibe: ['Intense', 2] } },
+          { text: "A massive mountain of meat or heavy comfort food.", traits: { types: ['Normal', 1, 'Fighting', 1], vibe: ['Chill', 1] } },
+          { text: "Fresh salads, exotic fruits, and light bites.", traits: { types: ['Grass', 2, 'Flying', 1], habitat: ['Nature', 1] } }
+        ]
+      },
+      {
+        question: "How do you learn a new skill best?",
+        options: [
+          { text: "Reading the manual and studying the theory first.", traits: { style: ['Tactical', 2], types: ['Psychic', 1, 'Steel', 1] } },
+          { text: "Jumping right in and learning by doing (and failing).", traits: { vibe: ['Energetic', 2], style: ['Adaptable', 1], types: ['Electric', 1] } },
+          { text: "Watching a master do it, then copying them.", traits: { style: ['Tricky', 1], vibe: ['Stoic', 1], types: ['Normal', 1] } },
+          { text: "I don't. I just wing it and hope for the best.", traits: { style: ['Adaptable', 2], vibe: ['Mischievous', 1], types: ['Flying', 1] } }
+        ]
+      },
+      {
+        question: "Final thought: What is your ultimate driving force in life?",
+        options: [
+          { text: "Ambition. I want to be the best, no matter what.", traits: { vibe: ['Proud', 2], types: ['Dragon', 2], style: ['Aggressive', 1] } },
+          { text: "Love and connection. My friends and family are everything.", traits: { vibe: ['Loyal', 2, 'Friendly', 1], types: ['Fairy', 1] } },
+          { text: "Fun. Life is too short to take seriously.", traits: { vibe: ['Mischievous', 2, 'Energetic', 1], types: ['Electric', 1] } },
+          { text: "Peace. I just want a quiet, comfortable existence.", traits: { vibe: ['Chill', 2, 'Stoic', 1], types: ['Water', 1, 'Grass', 1] } }
+        ]
+      }
+    ];
+
+    function PokemonQuiz() {
+      const [currentQuestion, setCurrentQuestion] = useState(0);
+      const [userScores, setUserScores] = useState({ types: {}, habitat: {}, style: {}, vibe: {} });
+      const [isFinished, setIsFinished] = useState(false);
+
+      const handleAnswer = (traits) => {
+        const newScores = { ...userScores };
+        Object.keys(traits).forEach((category) => {
+          const categoryArray = traits[category];
+          for (let i = 0; i < categoryArray.length; i += 2) {
+            const traitName = categoryArray[i];
+            const pointValue = categoryArray[i + 1];
+            if (!newScores[category][traitName]) {
+              newScores[category][traitName] = 0;
+            }
+            newScores[category][traitName] += pointValue;
+          }
+        });
+        setUserScores(newScores);
+
+        if (currentQuestion < QUESTIONS.length - 1) {
+          setCurrentQuestion(currentQuestion + 1);
+        } else {
+          setIsFinished(true);
+        }
+      };
+
+      const calculateResult = () => {
+        let bestMatch = POKEMON_DB[0];
+        let highestScore = -1;
+
+        POKEMON_DB.forEach((pokemon) => {
+          let currentScore = 0;
+          pokemon.types.forEach(type => {
+            if (userScores.types[type]) currentScore += userScores.types[type];
+          });
+          if (userScores.habitat[pokemon.habitat]) currentScore += userScores.habitat[pokemon.habitat];
+          if (userScores.style[pokemon.style]) currentScore += userScores.style[pokemon.style];
+          if (userScores.vibe[pokemon.vibe]) currentScore += userScores.vibe[pokemon.vibe];
+
+          if (currentScore > highestScore) {
+            highestScore = currentScore;
+            bestMatch = pokemon;
+          }
+        });
+
+        return { pokemon: bestMatch, score: highestScore };
+      };
+
+      const resetQuiz = () => {
+        setCurrentQuestion(0);
+        setUserScores({ types: {}, habitat: {}, style: {}, vibe: {} });
+        setIsFinished(false);
+      };
+
+      const renderQuiz = () => {
+        const question = QUESTIONS[currentQuestion];
+        const progress = Math.round((currentQuestion / QUESTIONS.length) * 100);
+
+        return (
+          <div className="w-full max-w-2xl mx-auto bg-[#faf5fa] border-2 border-[#b5a7d1] shadow-[6px_6px_0px_0px_rgba(181,167,209,0.4)] flex flex-col font-sans">
+            <div className="bg-gradient-to-r from-[#ffccee] via-[#e5ccee] to-[#cce5ff] p-1.5 flex justify-between items-center border-b-2 border-[#b5a7d1]">
+              <div className="flex items-center gap-2 px-2">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" className="w-4 h-4 pixelated" alt="icon" />
+                <span className="text-[#5e4b85] font-bold text-sm tracking-wide">
+                  Personality_Quiz.exe
+                </span>
+              </div>
+              <div className="flex gap-1 text-xs text-[#5e4b85] font-bold px-2">_ □ ✕</div>
+            </div>
+
+            <div className="p-6 bg-[#faf5fa] border-4 border-t-white border-l-white border-b-[#e0d6eb] border-r-[#e0d6eb]">
+              <div className="mb-6 border-2 border-t-[#a3adc2] border-l-[#a3adc2] border-b-white border-r-white bg-white h-5 p-0.5 relative flex items-center">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#ffccee] to-[#cce5ff] transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+                <span className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold text-[#5e4b85]">
+                  {progress}%
+                </span>
+              </div>
+
+              <div className="text-xs font-bold text-[#8a7ba6] tracking-wider mb-2 uppercase">
+                Question {currentQuestion + 1} of {QUESTIONS.length}
+              </div>
+              
+              <h2 className="text-xl font-bold text-[#4a3b69] mb-6 min-h-[3rem]">
+                {question.question}
+              </h2>
+
+              <div className="space-y-3">
+                {question.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswer(option.traits)}
+                    className="w-full text-left p-3 bg-[#fdfbfd] border-2 border-t-white border-l-white border-b-[#d1c5e3] border-r-[#d1c5e3] hover:bg-[#f0e6fa] active:border-t-[#d1c5e3] active:border-l-[#d1c5e3] active:border-b-white active:border-r-white active:bg-[#e8dcfa] transition-colors flex items-center justify-between"
+                  >
+                    <span className="text-[#5e4b85] font-medium text-sm">
+                      {option.text}
+                    </span>
+                    <span className="text-[#b5a7d1] font-bold">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderResult = () => {
+        const { pokemon } = calculateResult();
+
+        return (
+          <div className="w-full max-w-2xl mx-auto bg-[#faf5fa] border-2 border-[#b5a7d1] shadow-[6px_6px_0px_0px_rgba(181,167,209,0.4)] flex flex-col font-sans">
+            <div className="bg-gradient-to-r from-[#ffccee] via-[#e5ccee] to-[#cce5ff] p-1.5 flex justify-between items-center border-b-2 border-[#b5a7d1]">
+              <div className="flex items-center gap-2 px-2">
+                <span className="text-sm">✨</span>
+                <span className="text-[#5e4b85] font-bold text-sm tracking-wide">
+                  Result.exe
+                </span>
+              </div>
+              <button className="text-xs text-[#854b54] font-bold px-2" onClick={resetQuiz}>✕</button>
+            </div>
+
+            <div className="p-8 text-center border-4 border-t-white border-l-white border-b-[#e0d6eb] border-r-[#e0d6eb]">
+              <h2 className="text-3xl font-extrabold text-[#4a3b69] mb-3">
+                You are {pokemon.name}!
+              </h2>
+              
+              <div className="flex justify-center gap-2 mb-6">
+                 {pokemon.types.map(type => (
+                    <span key={type} className="px-3 py-1 bg-[#f0e6fa] border-2 border-t-white border-l-white border-b-[#d1c5e3] border-r-[#d1c5e3] text-xs font-bold text-[#5e4b85] uppercase tracking-widest">
+                      {type}
+                    </span>
+                 ))}
+              </div>
+
+              <div className="relative w-48 h-48 mx-auto mb-8 bg-[#ffebf5] rounded-full flex items-center justify-center border-4 border-dashed border-[#ffccee]">
+                <img 
+                  src={pokemon.image} 
+                  alt={pokemon.name} 
+                  className="w-40 h-40 object-contain hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-8 text-left">
+                <div className="bg-[#f2fbff] p-3 border-2 border-t-white border-l-white border-b-[#bce1ff] border-r-[#bce1ff]">
+                  <div className="text-[10px] font-bold text-[#7ca8c9] uppercase">Habitat</div>
+                  <div className="text-sm font-semibold text-[#4a6b85]">{pokemon.habitat}</div>
+                </div>
+                <div className="bg-[#fff5e6] p-3 border-2 border-t-white border-l-white border-b-[#ffd699] border-r-[#ffd699]">
+                  <div className="text-[10px] font-bold text-[#c99a63] uppercase">Combat Style</div>
+                  <div className="text-sm font-semibold text-[#856138]">{pokemon.style}</div>
+                </div>
+                <div className="bg-[#fdfbfd] p-3 border-2 border-t-white border-l-white border-b-[#d1c5e3] border-r-[#d1c5e3] col-span-2 text-center">
+                  <div className="text-[10px] font-bold text-[#9b8eb3] uppercase">Your Vibe</div>
+                  <div className="text-sm font-semibold text-[#5e4b85]">{pokemon.vibe}</div>
+                </div>
+              </div>
+
+              <button 
+                onClick={resetQuiz}
+                className="w-full py-3 bg-[#e6f0ff] text-[#4a6b85] border-2 border-t-white border-l-white border-b-[#a3adc2] border-r-[#a3adc2] active:border-t-[#a3adc2] active:border-l-[#a3adc2] active:border-b-white active:border-r-white active:bg-[#d6e5ff] font-bold transition-all text-sm uppercase tracking-wide"
+              >
+                Restart Sequence ↺
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div 
+          className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${ASSETS.background})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          {/* Floating Sprites */}
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <img src={ASSETS.sprites[0]} className="absolute top-[10%] left-[5%] w-28 opacity-80 mix-blend-multiply float-slow" alt="sprite1" />
+            <img src={ASSETS.sprites[1]} className="absolute bottom-[15%] right-[5%] w-28 opacity-80 mix-blend-multiply float-slow" style={{ animationDelay: '1s' }} alt="sprite2" />
+            <img src={ASSETS.sprites[2]} className="absolute top-[20%] right-[10%] w-24 opacity-80 mix-blend-multiply float-slow" style={{ animationDelay: '2s' }} alt="sprite3" />
+            <img src={ASSETS.sprites[3]} className="absolute bottom-[10%] left-[10%] w-24 opacity-80 mix-blend-multiply float-slow" style={{ animationDelay: '3s' }} alt="sprite4" />
+          </div>
+
+          <div className="relative z-10 w-full">
+            {!isFinished ? renderQuiz() : renderResult()}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PokemonQuiz />);
+  </script>
+</body>
+</html>
+</html>
