@@ -15,9 +15,6 @@
   <!-- Babel to compile JSX in the browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
     .pixelated {
       image-rendering: pixelated;
@@ -35,7 +32,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     const ASSETS = {
       background: 'https://i.pinimg.com/736x/a1/78/49/a1784992a1330eacd83cc0c868bf8e11.jpg',
@@ -46,21 +43,6 @@
         'https://64.media.tumblr.com/0ad8096d00aba5982a17070e1499d16d/09fa295d8bc7956b-de/s250x400/83586fe0b743ee42b021a107b1e5fdc379a2efa1.pnj'
       ]
     };
-
-    const POKEMON_DB = [
-      { id: 1, name: 'Bulbasaur', types: ['Grass', 'Poison'], habitat: 'Nature', style: 'Tactical', vibe: 'Loyal', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png' },
-      { id: 6, name: 'Charizard', types: ['Fire', 'Flying'], habitat: 'Mountain', style: 'Aggressive', vibe: 'Proud', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png' },
-      { id: 9, name: 'Blastoise', types: ['Water'], habitat: 'Water', style: 'Defensive', vibe: 'Stoic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png' },
-      { id: 25, name: 'Pikachu', types: ['Electric'], habitat: 'Urban', style: 'Speedy', vibe: 'Energetic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png' },
-      { id: 94, name: 'Gengar', types: ['Ghost', 'Poison'], habitat: 'Urban', style: 'Tricky', vibe: 'Mischievous', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png' },
-      { id: 133, name: 'Eevee', types: ['Normal'], habitat: 'Urban', style: 'Adaptable', vibe: 'Friendly', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png' },
-      { id: 143, name: 'Snorlax', types: ['Normal'], habitat: 'Nature', style: 'Defensive', vibe: 'Chill', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png' },
-      { id: 448, name: 'Lucario', types: ['Fighting', 'Steel'], habitat: 'Mountain', style: 'Tactical', vibe: 'Stoic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png' },
-      { id: 658, name: 'Greninja', types: ['Water', 'Dark'], habitat: 'Water', style: 'Speedy', vibe: 'Mischievous', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/658.png' },
-      { id: 700, name: 'Sylveon', types: ['Fairy'], habitat: 'Urban', style: 'Defensive', vibe: 'Friendly', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/700.png' },
-      { id: 1011, name: 'Dipplin', types: ['Grass', 'Dragon'], habitat: 'Nature', style: 'Tricky', vibe: 'Chill', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1011.png' },
-      { id: 1017, name: 'Ogerpon', types: ['Grass'], habitat: 'Mountain', style: 'Adaptable', vibe: 'Energetic', image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1017.png' }
-    ];
 
     const QUESTIONS = [
       {
@@ -246,9 +228,22 @@
     ];
 
     function PokemonQuiz() {
+      const [pokemonDB, setPokemonDB] = useState([]);
       const [currentQuestion, setCurrentQuestion] = useState(0);
       const [userScores, setUserScores] = useState({ types: {}, habitat: {}, style: {}, vibe: {} });
       const [isFinished, setIsFinished] = useState(false);
+      const [loading, setLoading] = useState(true);
+
+      // Fetch the full 1,025 database when the quiz loads
+      useEffect(() => {
+        fetch('./pokemon_data.json')
+          .then(res => res.json())
+          .then(data => {
+            setPokemonDB(data);
+            setLoading(false);
+          })
+          .catch(err => console.error("Error loading pokedex:", err));
+      }, []);
 
       const handleAnswer = (traits) => {
         const newScores = { ...userScores };
@@ -273,10 +268,11 @@
       };
 
       const calculateResult = () => {
-        let bestMatch = POKEMON_DB[0];
+        if (!pokemonDB.length) return null;
+        let bestMatch = pokemonDB[0];
         let highestScore = -1;
 
-        POKEMON_DB.forEach((pokemon) => {
+        pokemonDB.forEach((pokemon) => {
           let currentScore = 0;
           pokemon.types.forEach(type => {
             if (userScores.types[type]) currentScore += userScores.types[type];
@@ -299,6 +295,15 @@
         setUserScores({ types: {}, habitat: {}, style: {}, vibe: {} });
         setIsFinished(false);
       };
+
+      if (loading) {
+        return (
+          <div className="w-full max-w-sm mx-auto bg-[#faf5fa] border-2 border-[#b5a7d1] shadow-[6px_6px_0px_0px_rgba(181,167,209,0.4)] p-6 text-center font-sans">
+            <div className="text-sm font-bold text-[#5e4b85] mb-2">Loading Pokédex...</div>
+            <div className="text-xs text-[#8a7ba6]">Fetching all Pokémon entries...</div>
+          </div>
+        );
+      }
 
       const renderQuiz = () => {
         const question = QUESTIONS[currentQuestion];
@@ -355,7 +360,9 @@
       };
 
       const renderResult = () => {
-        const { pokemon } = calculateResult();
+        const result = calculateResult();
+        if (!result) return null;
+        const { pokemon } = result;
 
         return (
           <div className="w-full max-w-2xl mx-auto bg-[#faf5fa] border-2 border-[#b5a7d1] shadow-[6px_6px_0px_0px_rgba(181,167,209,0.4)] flex flex-col font-sans">
@@ -445,5 +452,4 @@
     root.render(<PokemonQuiz />);
   </script>
 </body>
-</html>
 </html>
