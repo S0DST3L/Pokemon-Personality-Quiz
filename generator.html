@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokémon Data Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #faf5fa;
+      color: #5e4b85;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #e6f0ff;
+      border: 2px solid #b5a7d1;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #d6e5ff; }
+    #status { margin-top: 16px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Pokédex Data Builder</h1>
+  <button id="btn" onclick="startDownload()">Download pokemon_data.json</button>
+  <p id="status"></p>
+
+  <script>
+    async function startDownload() {
+      const status = document.getElementById('status');
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      status.innerText = "Fetching Pokémon names from PokéAPI...";
+
+      try {
+        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
+        const list = await res.json();
+
+        status.innerText = "Formatting entries 1 to 1025...";
+
+        const TYPES = [
+          { type: 'Grass', habitat: 'Nature', style: 'Tactical', vibe: 'Chill' },
+          { type: 'Fire', habitat: 'Mountain', style: 'Aggressive', vibe: 'Energetic' },
+          { type: 'Water', habitat: 'Water', style: 'Adaptable', vibe: 'Chill' },
+          { type: 'Electric', habitat: 'Urban', style: 'Speedy', vibe: 'Energetic' },
+          { type: 'Normal', habitat: 'Urban', style: 'Adaptable', vibe: 'Friendly' },
+          { type: 'Bug', habitat: 'Nature', style: 'Speedy', vibe: 'Friendly' },
+          { type: 'Flying', habitat: 'Mountain', style: 'Speedy', vibe: 'Energetic' },
+          { type: 'Poison', habitat: 'Nature', style: 'Tricky', vibe: 'Mischievous' },
+          { type: 'Ground', habitat: 'Nature', style: 'Defensive', vibe: 'Stoic' },
+          { type: 'Rock', habitat: 'Mountain', style: 'Defensive', vibe: 'Stoic' },
+          { type: 'Psychic', habitat: 'Urban', style: 'Tactical', vibe: 'Stoic' },
+          { type: 'Ice', habitat: 'Mountain', style: 'Defensive', vibe: 'Stoic' },
+          { type: 'Fighting', habitat: 'Mountain', style: 'Aggressive', vibe: 'Proud' },
+          { type: 'Ghost', habitat: 'Urban', style: 'Tricky', vibe: 'Mischievous' },
+          { type: 'Dragon', habitat: 'Mountain', style: 'Aggressive', vibe: 'Proud' },
+          { type: 'Dark', habitat: 'Urban', style: 'Tricky', vibe: 'Mischievous' },
+          { type: 'Steel', habitat: 'Urban', style: 'Defensive', vibe: 'Stoic' },
+          { type: 'Fairy', habitat: 'Nature', style: 'Tactical', vibe: 'Friendly' }
+        ];
+
+        const formatted = list.results.map((p, idx) => {
+          const id = idx + 1;
+          const cleanName = p.name.split('-')[0].charAt(0).toUpperCase() + p.name.split('-')[0].slice(1);
+          const t1 = TYPES[(id * 7) % TYPES.length];
+          const t2 = TYPES[(id * 11) % TYPES.length];
+          
+          const types = [t1.type];
+          if (t1.type !== t2.type && id % 2 === 0) {
+            types.push(t2.type);
+          }
+
+          return {
+            id: id,
+            name: cleanName,
+            types: types,
+            habitat: t1.habitat,
+            style: t1.style,
+            vibe: t1.vibe,
+            image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+          };
+        });
+
+        const blob = new Blob([JSON.stringify(formatted, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'pokemon_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        status.innerText = "Done! Check your Downloads folder for pokemon_data.json.";
+      } catch (err) {
+        status.innerText = "Error fetching data: " + err.message;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
